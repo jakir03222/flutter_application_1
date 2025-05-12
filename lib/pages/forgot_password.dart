@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/pages/forgot_password.dart';
-import 'package:flutter_application_1/pages/todo_add.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class ForgotPasswordPage extends StatefulWidget {
+  const ForgotPasswordPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
+class _ForgotPasswordPageState extends State<ForgotPasswordPage>
     with SingleTickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -35,14 +32,12 @@ class _LoginPageState extends State<LoginPage>
   @override
   void dispose() {
     _animationController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showErrorDialog('Please enter both email and password');
+  Future<void> _resetPassword() async {
+    if (_emailController.text.isEmpty) {
+      _showErrorDialog('Please enter your email address');
       return;
     }
 
@@ -51,15 +46,9 @@ class _LoginPageState extends State<LoginPage>
     });
 
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-
-      print("Login successful: ${userCredential.user?.email}");
+      await _auth.sendPasswordResetEmail(email: _emailController.text);
 
       if (mounted) {
-        // Show success dialog
         showDialog(
           context: context,
           builder:
@@ -68,18 +57,16 @@ class _LoginPageState extends State<LoginPage>
                   borderRadius: BorderRadius.circular(20),
                 ),
                 title: Text('Success'),
-                content: Text('Login successful!'),
+                content: Text(
+                  'Password reset email has been sent to ${_emailController.text}. Please check your email.',
+                ),
                 actions: [
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context); // Close dialog
-                      // Navigate to todo page
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => TodoAddPage()),
-                      );
+                      Navigator.pop(context); // Go back to login page
                     },
-                    child: Text('Continue'),
+                    child: Text('OK'),
                   ),
                 ],
               ),
@@ -146,12 +133,20 @@ class _LoginPageState extends State<LoginPage>
                     ),
                     SizedBox(height: 20),
                     Text(
-                      'Welcome\nBack',
+                      'Reset\nPassword',
                       style: TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                         height: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Enter your email address and we\'ll send you a link to reset your password.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.8),
                       ),
                     ),
                     SizedBox(height: 40),
@@ -191,49 +186,9 @@ class _LoginPageState extends State<LoginPage>
                             ),
                             keyboardType: TextInputType.emailAddress,
                           ),
-                          SizedBox(height: 20),
-                          TextField(
-                            controller: _passwordController,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: Icon(Icons.lock_outline),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.blue),
-                              ),
-                            ),
-                            obscureText: true,
-                          ),
-                          SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ForgotPasswordPage(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(color: Colors.blue),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
+                          SizedBox(height: 30),
                           ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
+                            onPressed: _isLoading ? null : _resetPassword,
                             style: ElevatedButton.styleFrom(
                               minimumSize: Size(double.infinity, 55),
                               shape: RoundedRectangleBorder(
@@ -257,33 +212,9 @@ class _LoginPageState extends State<LoginPage>
                                       ),
                                     )
                                     : Text(
-                                      'Login',
+                                      'Send Reset Link',
                                       style: TextStyle(fontSize: 18),
                                     ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Don't have an account?",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacementNamed(context, '/');
-                            },
-                            child: Text(
-                              'Sign Up',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
                           ),
                         ],
                       ),

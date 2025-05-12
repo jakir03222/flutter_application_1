@@ -1,23 +1,22 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/pages/forgot_password.dart';
-import 'package:flutter_application_1/pages/todo_add.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/pages/login_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
+class _SignUpPageState extends State<SignUpPage>
     with SingleTickerProviderStateMixin {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -35,89 +34,67 @@ class _LoginPageState extends State<LoginPage>
   @override
   void dispose() {
     _animationController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showErrorDialog('Please enter both email and password');
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _signUp() async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(
+            email: _emailController.text,
+            password: _passwordController.text,
+          );
 
-      print("Login successful: ${userCredential.user?.email}");
+      print("Sign-up successful: ${userCredential.user?.email}");
 
-      if (mounted) {
-        // Show success dialog
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+      // Show success dialog
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text('Success'),
+              content: Text(
+                'Account created successfully! Welcome ${_nameController.text}',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pushReplacementNamed(
+                      context,
+                      '/home',
+                    ); // Navigate to home
+                  },
+                  child: Text('Continue'),
                 ),
-                title: Text('Success'),
-                content: Text('Login successful!'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close dialog
-                      // Navigate to todo page
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => TodoAddPage()),
-                      );
-                    },
-                    child: Text('Continue'),
-                  ),
-                ],
-              ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog(e.toString());
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              ],
             ),
-            title: Text('Error'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('Close'),
+      );
+    } catch (e) {
+      print("Error during sign-up: $e");
+      showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-            ],
-          ),
-    );
+              title: Text('Error'),
+              content: Text(e.toString()),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Close'),
+                ),
+              ],
+            ),
+      );
+    }
   }
 
   @override
@@ -140,13 +117,9 @@ class _LoginPageState extends State<LoginPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
                     SizedBox(height: 20),
                     Text(
-                      'Welcome\nBack',
+                      'Create\nAccount',
                       style: TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
@@ -170,6 +143,27 @@ class _LoginPageState extends State<LoginPage>
                       padding: EdgeInsets.all(20),
                       child: Column(
                         children: [
+                          TextField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              labelText: 'Full Name',
+                              prefixIcon: Icon(Icons.person_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Colors.blue),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20),
                           TextField(
                             controller: _emailController,
                             decoration: InputDecoration(
@@ -213,27 +207,13 @@ class _LoginPageState extends State<LoginPage>
                             ),
                             obscureText: true,
                           ),
-                          SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ForgotPasswordPage(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(color: Colors.blue),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
+                          SizedBox(height: 30),
                           ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
+                            onPressed: _signUp,
+                            child: Text(
+                              'Sign Up',
+                              style: TextStyle(fontSize: 18),
+                            ),
                             style: ElevatedButton.styleFrom(
                               minimumSize: Size(double.infinity, 55),
                               shape: RoundedRectangleBorder(
@@ -243,23 +223,6 @@ class _LoginPageState extends State<LoginPage>
                               foregroundColor: Colors.white,
                               elevation: 5,
                             ),
-                            child:
-                                _isLoading
-                                    ? SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                      ),
-                                    )
-                                    : Text(
-                                      'Login',
-                                      style: TextStyle(fontSize: 18),
-                                    ),
                           ),
                         ],
                       ),
@@ -270,15 +233,20 @@ class _LoginPageState extends State<LoginPage>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account?",
+                            "Already have an account?",
                             style: TextStyle(color: Colors.white),
                           ),
                           TextButton(
                             onPressed: () {
-                              Navigator.pushReplacementNamed(context, '/');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
+                                ),
+                              );
                             },
                             child: Text(
-                              'Sign Up',
+                              'Log In',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
