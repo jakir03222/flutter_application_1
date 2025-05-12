@@ -91,6 +91,103 @@ class _TodoAddPageState extends State<TodoAddPage>
     }
   }
 
+  Future<void> _updateTodo(DocumentSnapshot todo) async {
+    final data = todo.data() as Map<String, dynamic>;
+    final TextEditingController editTitleController = TextEditingController(
+      text: data['title'],
+    );
+    final TextEditingController editDescriptionController =
+        TextEditingController(text: data['description']);
+
+    return showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text('Edit Todo'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: editTitleController,
+                    decoration: InputDecoration(
+                      labelText: 'Title',
+                      prefixIcon: Icon(Icons.title),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  TextField(
+                    controller: editDescriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      prefixIcon: Icon(Icons.description),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (editTitleController.text.isEmpty) {
+                    _showErrorDialog('Please enter a title');
+                    return;
+                  }
+
+                  try {
+                    await todo.reference.update({
+                      'title': editTitleController.text,
+                      'description': editDescriptionController.text,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Todo updated successfully!'),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      _showErrorDialog(e.toString());
+                    }
+                  }
+                },
+                child: Text('Update'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -356,11 +453,26 @@ class _TodoAddPageState extends State<TodoAddPage>
                                     });
                                   },
                                 ),
-                                trailing: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () async {
-                                    await todo.reference.delete();
-                                  },
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.edit,
+                                        color: Colors.blue,
+                                      ),
+                                      onPressed: () => _updateTodo(todo),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () async {
+                                        await todo.reference.delete();
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
